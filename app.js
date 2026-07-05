@@ -79,8 +79,13 @@ function setResult(url) {
 }
 
 function generateUrl(config) {
-  const baseUrl = `${location.origin}${location.pathname}`;
-  return `${baseUrl}#unlock=${encodeConfig(config)}`;
+  const url = new URL(location.href);
+  url.search = "";
+  url.hash = "";
+  if (url.pathname.endsWith("/index.html")) {
+    url.pathname = url.pathname.slice(0, -"index.html".length);
+  }
+  return `${url.toString()}#unlock=${encodeConfig(config)}`;
 }
 
 function progressKey() {
