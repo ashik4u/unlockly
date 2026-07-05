@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unlockly Local</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="App header">
+        <a class="brand" href="./index.html" aria-label="Unlockly Local home">
+          <span class="brand-mark" aria-hidden="true">U</span>
+          <span>Unlockly Local</span>
+        </a>
+        <div class="status-pill" id="modePill">Builder</div>
+      </section>
+
+      <section class="builder" id="builderView">
+        <div class="builder-grid">
+          <form class="panel form-panel" id="lockerForm">
+            <div class="section-heading">
+              <p class="eyebrow">Private link gate</p>
+              <h1>Create an unlock link</h1>
+            </div>
+
+            <label class="field">
+              <span>Destination URL</span>
+              <input id="destination" type="url" placeholder="https://example.com/download" required />
+            </label>
+
+            <div class="split">
+              <label class="field">
+                <span>Title</span>
+                <input id="title" type="text" maxlength="72" value="Complete the steps to unlock" />
+              </label>
+              <label class="field">
+                <span>Accent</span>
+                <select id="accent">
+                  <option value="teal">Teal</option>
+                  <option value="coral">Coral</option>
+                  <option value="sun">Sun</option>
+                  <option value="ink">Ink</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="tasks-head">
+              <div>
+                <p class="eyebrow">Tasks</p>
+                <h2>Unlock requirements</h2>
+              </div>
+              <button class="icon-btn" type="button" id="addTask" title="Add task" aria-label="Add task">+</button>
+            </div>
+
+            <div class="tasks-list" id="tasksList"></div>
+
+            <div class="actions">
+              <button class="primary" type="submit">Generate link</button>
+              <button class="secondary" type="button" id="resetForm">Reset</button>
+            </div>
+          </form>
+
+          <aside class="panel preview-panel">
+            <img class="hero-asset" src="assets/dashboard-visual.png" alt="Abstract private link dashboard visual" />
+            <div class="result-box">
+              <p class="eyebrow">Generated URL</p>
+              <textarea id="resultUrl" readonly placeholder="Your unlock link appears here"></textarea>
+              <div class="actions compact">
+                <button class="secondary" id="copyLink" type="button">Copy</button>
+                <a class="secondary link-button" id="openLink" href="#" target="_blank" rel="noreferrer">Open</a>
+                <button class="secondary" id="downloadHtml" type="button">Export</button>
+              </div>
+            </div>
+            <div class="note">
+              Client-side gates are useful for private workflows, prototypes, and low-risk sharing. Do not use this as strong access control for sensitive files.
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="unlock" id="unlockView" hidden>
+        <div class="unlock-card" id="unlockCard">
+          <p class="eyebrow">Unlock page</p>
+          <h1 id="unlockTitle">Complete the steps to unlock</h1>
+          <p class="unlock-copy" id="unlockCopy">Finish every task below. The destination button will activate when all steps are marked complete.</p>
+          <div class="unlock-tasks" id="unlockTasks"></div>
+          <a class="primary unlock-button disabled" id="destinationLink" href="#" rel="noreferrer">Unlock destination</a>
+        </div>
+      </section>
+    </main>
+
+    <template id="taskTemplate">
+      <div class="task-row">
+        <select class="task-type" aria-label="Task type">
+          <option value="visit">Visit link</option>
+          <option value="subscribe">Subscribe</option>
+          <option value="follow">Follow</option>
+          <option value="watch">Watch</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input class="task-label" type="text" maxlength="70" placeholder="Task label" />
+        <input class="task-url" type="url" placeholder="https://..." />
+        <button class="icon-btn remove-task" type="button" title="Remove task" aria-label="Remove task">x</button>
+      </div>
+    </template>
+
+    <script src="app.js?v=auto-links-2"></script>
+  </body>
+</html>
