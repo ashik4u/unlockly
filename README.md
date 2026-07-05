@@ -16,13 +16,20 @@ Generated links use short path codes, for example:
 https://ashik4u.github.io/unlockly/7KQ2M
 ```
 
-Because this is a static app, short-code data is stored in the browser that created it. For public cross-device short links, add a small backend or database.
+## Works on All Devices
 
-If the first workflow run says `Get Pages site failed` or `Resource not accessible by integration`, enable Pages once in the repository settings:
+Generated links are designed to work seamlessly across all devices:
 
-1. Open `Settings` -> `Pages`.
-2. Under `Build and deployment`, set `Source` to `GitHub Actions`.
-3. Save, then rerun the `Deploy GitHub Pages` workflow.
+- **Desktop**: Full functionality with keyboard and mouse navigation
+- **Tablet**: Optimized touch interface with responsive layout
+- **Mobile**: Mobile-friendly design with optimized task display
+
+Example cross-device links:
+- https://ashik4u.github.io/unlockly/7KQ2M
+- https://ashik4u.github.io/unlockly/3XJ9L
+- https://ashik4u.github.io/unlockly/K8M2Q
+
+**Note on Data Storage**: Because this is a static app, short-code data is stored in the browser that created it. For public cross-device short links with persistent data across devices, you'll need to add a small backend or database.
 
 ## Run Locally
 
