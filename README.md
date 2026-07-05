@@ -29,7 +29,55 @@ Example cross-device links:
 - https://ashik4u.github.io/unlockly/3XJ9L
 - https://ashik4u.github.io/unlockly/K8M2Q
 
-**Note on Data Storage**: Because this is a static app, short-code data is stored in the browser that created it. For public cross-device short links with persistent data across devices, you'll need to add a small backend or database.
+## Storage Options
+
+### Local Storage (Default)
+By default, unlock links are stored in the browser's `localStorage`. This works out of the box but has a limitation: short-code data is only available on the same device where it was created.
+
+**Pros:**
+- No setup required
+- Works offline
+- Maximum privacy (all data stays local)
+
+**Cons:**
+- Data not shared across devices
+- Lost if localStorage is cleared
+
+### Cloud Storage (Optional)
+For public cross-device short links with persistent data, you can enable optional cloud storage using **Supabase**.
+
+**Pros:**
+- Links work across all devices
+- Persistent storage
+- 30-day auto-cleanup of expired links
+- Offline queuing (syncs when connection restored)
+
+**Cons:**
+- Requires Supabase account setup
+
+#### Setting Up Cloud Storage
+
+1. **Create a Supabase project** at https://supabase.com
+2. **Run the schema** in Supabase SQL editor:
+   ```bash
+   # Copy contents from supabase-schema.sql
+   # Run in your Supabase SQL editor
+   ```
+3. **Get your credentials** from Supabase project settings:
+   - Supabase URL
+   - Anon Key
+
+4. **Configure the app** - Create/update `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit `.env` with your Supabase credentials:
+   ```
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+
+5. **Deploy** - The app will automatically use cloud storage when credentials are configured.
 
 ## Run Locally
 
@@ -46,6 +94,7 @@ http://127.0.0.1:4173/
 ## Notes
 
 - This is a client-side convenience gate, not strong access control.
-- Short-code data is stored in `localStorage`.
+- Short-code data is stored in `localStorage` by default.
 - Link tasks auto-check when opened.
 - Progress is stored in `sessionStorage` for the current browser session.
+- Cloud storage is optional and automatically handles offline scenarios.
