@@ -102,7 +102,7 @@ function appBaseUrl() {
   return url.toString();
 }
 
-function createShortCode() {
+async function createShortCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const values = new Uint8Array(5);
   let code = "";
@@ -118,9 +118,9 @@ function createShortCode() {
   return code;
 }
 
-function generateUrl(config) {
-  const code = createShortCode();
-  localStorage.setItem(`${lockerPrefix}${code}`, JSON.stringify(config));
+async function generateUrl(config) {
+  const code = await createShortCode();
+  await storage.save(code, config);
   return `${appBaseUrl()}${code}`;
 }
 
@@ -195,7 +195,7 @@ function escapeHtml(value) {
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
-    "\"": "&quot;",
+    '"': "&quot;",
     "'": "&#039;"
   })[char]);
 }
@@ -223,15 +223,15 @@ function bootUnlockFromHash() {
   }
 }
 
-function bootUnlockFromPath() {
+async function bootUnlockFromPath() {
   const parts = location.pathname.split("/").filter(Boolean);
   const code = parts[parts.length - 1];
   if (!codePattern.test(code || "")) return false;
 
   try {
-    const saved = localStorage.getItem(`${lockerPrefix}${code.toUpperCase()}`);
-    if (!saved) return false;
-    renderUnlock(JSON.parse(saved));
+    const config = await storage.load(code);
+    if (!config) return false;
+    renderUnlock(config);
     return true;
   } catch (error) {
     console.error(error);
@@ -246,7 +246,7 @@ function showBuilder() {
   document.body.className = "";
 }
 
-form.addEventListener("submit", (event) => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const config = getConfig();
 
@@ -262,7 +262,8 @@ form.addEventListener("submit", (event) => {
   }
 
   localStorage.setItem("unlockly:lastConfig", JSON.stringify(config));
-  setResult(generateUrl(config));
+  const url = await generateUrl(config);
+  setResult(url);
 });
 
 addTaskButton.addEventListener("click", () => addTask());
@@ -283,24 +284,29 @@ copyLink.addEventListener("click", async () => {
   }, 1200);
 });
 
-downloadButton.addEventListener("click", () => {
+downloadButton.addEventListener("click", async () => {
   const config = getConfig();
-  const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${escapeAttribute(generateUrl(config))}"><a href="${escapeAttribute(generateUrl(config))}">Open unlock page</a>`;
+  const url = await generateUrl(config);
+  const html = `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=${escapeAttribute(url)}"><a href="${escapeAttribute(url)}">Open unlock link</a>`;
   const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
+  const objUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = objUrl;
   a.download = "unlock-link.html";
   a.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(objUrl);
 });
 
-if (!bootUnlockFromPath() && !bootUnlockFromHash()) {
-  bootBuilder();
+async function boot() {
+  if (!await bootUnlockFromPath() && !bootUnlockFromHash()) {
+    bootBuilder();
+  }
 }
 
-window.addEventListener("hashchange", () => {
-  if (!bootUnlockFromPath() && !bootUnlockFromHash()) {
+boot();
+
+window.addEventListener("hashchange", async () => {
+  if (!await bootUnlockFromPath() && !await bootUnlockFromHash()) {
     showBuilder();
   }
 });
