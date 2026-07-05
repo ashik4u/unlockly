@@ -10,6 +10,14 @@ This repo is ready for GitHub Pages. After the Pages workflow runs, the site sho
 https://ashik4u.github.io/unlockly/
 ```
 
+Generated links use short path codes, for example:
+
+```text
+https://ashik4u.github.io/unlockly/7KQ2M
+```
+
+Because this is a static app, short-code data is stored in the browser that created it. For public cross-device short links, add a small backend or database.
+
 If the first workflow run says `Get Pages site failed` or `Resource not accessible by integration`, enable Pages once in the repository settings:
 
 1. Open `Settings` -> `Pages`.
@@ -31,5 +39,6 @@ http://127.0.0.1:4173/
 ## Notes
 
 - This is a client-side convenience gate, not strong access control.
+- Short-code data is stored in `localStorage`.
 - Link tasks auto-check when opened.
 - Progress is stored in `sessionStorage` for the current browser session.

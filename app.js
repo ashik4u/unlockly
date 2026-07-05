@@ -13,6 +13,8 @@ const unlockTasks = document.querySelector("#unlockTasks");
 const unlockTitle = document.querySelector("#unlockTitle");
 const destinationLink = document.querySelector("#destinationLink");
 const modePill = document.querySelector("#modePill");
+const codePattern = /^[a-z0-9]{5}$/i;
+const lockerPrefix = "unlockly:locker:";
 
 const defaultTasks = [
   {
@@ -78,18 +80,52 @@ function setResult(url) {
   openLink.href = url;
 }
 
-function generateUrl(config) {
+function appBaseUrl() {
   const url = new URL(location.href);
   url.search = "";
   url.hash = "";
   if (url.pathname.endsWith("/index.html")) {
     url.pathname = url.pathname.slice(0, -"index.html".length);
   }
-  return `${url.toString()}#unlock=${encodeConfig(config)}`;
+
+  const parts = url.pathname.split("/").filter(Boolean);
+  if (parts.length && codePattern.test(parts[parts.length - 1])) {
+    parts.pop();
+  }
+
+  if (location.hostname.endsWith("github.io") && parts.length) {
+    url.pathname = `/${parts[0]}/`;
+  } else {
+    url.pathname = parts.length ? `/${parts.join("/")}/` : "/";
+  }
+
+  return url.toString();
+}
+
+function createShortCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const values = new Uint8Array(5);
+  let code = "";
+
+  do {
+    code = "";
+    crypto.getRandomValues(values);
+    values.forEach((value) => {
+      code += alphabet[value % alphabet.length];
+    });
+  } while (localStorage.getItem(`${lockerPrefix}${code}`));
+
+  return code;
+}
+
+function generateUrl(config) {
+  const code = createShortCode();
+  localStorage.setItem(`${lockerPrefix}${code}`, JSON.stringify(config));
+  return `${appBaseUrl()}${code}`;
 }
 
 function progressKey() {
-  return `unlockly:progress:${location.hash}`;
+  return `unlockly:progress:${location.pathname}${location.hash}`;
 }
 
 function loadProgress() {
@@ -187,6 +223,22 @@ function bootUnlockFromHash() {
   }
 }
 
+function bootUnlockFromPath() {
+  const parts = location.pathname.split("/").filter(Boolean);
+  const code = parts[parts.length - 1];
+  if (!codePattern.test(code || "")) return false;
+
+  try {
+    const saved = localStorage.getItem(`${lockerPrefix}${code.toUpperCase()}`);
+    if (!saved) return false;
+    renderUnlock(JSON.parse(saved));
+    return true;
+  } catch (error) {
+    console.error(error);
+    return false;
+  }
+}
+
 function showBuilder() {
   builderView.hidden = false;
   unlockView.hidden = true;
@@ -209,9 +261,8 @@ form.addEventListener("submit", (event) => {
     return;
   }
 
-  const url = generateUrl(config);
-  setResult(url);
   localStorage.setItem("unlockly:lastConfig", JSON.stringify(config));
+  setResult(generateUrl(config));
 });
 
 addTaskButton.addEventListener("click", () => addTask());
@@ -244,12 +295,12 @@ downloadButton.addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-if (!bootUnlockFromHash()) {
+if (!bootUnlockFromPath() && !bootUnlockFromHash()) {
   bootBuilder();
 }
 
 window.addEventListener("hashchange", () => {
-  if (!bootUnlockFromHash()) {
+  if (!bootUnlockFromPath() && !bootUnlockFromHash()) {
     showBuilder();
   }
 });
