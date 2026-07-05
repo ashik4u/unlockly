@@ -10,6 +10,12 @@ This repo is ready for GitHub Pages. After the Pages workflow runs, the site sho
 https://ashik4u.github.io/unlockly/
 ```
 
+If the first workflow run says `Get Pages site failed` or `Resource not accessible by integration`, enable Pages once in the repository settings:
+
+1. Open `Settings` -> `Pages`.
+2. Under `Build and deployment`, set `Source` to `GitHub Actions`.
+3. Save, then rerun the `Deploy GitHub Pages` workflow.
+
 ## Run Locally
 
 ```powershell
