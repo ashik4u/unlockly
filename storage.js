@@ -3,8 +3,8 @@
  * Cloud storage enables cross-device link persistence
  */
 
-const SUPABASE_URL = "" || "";
-const SUPABASE_KEY = "" || "";
+const SUPABASE_URL = "https://wymwpbokfrowqzalgqns.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5bXdwYm9rZnJvd3F6YWxncW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyNjQzNzYsImV4cCI6MjA5ODg0MDM3Nn0.7IW4XtF_XSTFWbSRc2wF0-lTCRo0TI1WMOR4CVit1hs";
 
 class StorageManager {
   constructor() {
