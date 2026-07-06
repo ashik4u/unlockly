@@ -13,12 +13,21 @@ class StorageManager {
     this.db = null;
     this.initPromise = null;
     
+    console.log("[Storage] Initializing with Supabase:", this.hasSupabase ? "enabled" : "disabled");
+    
+    // Eagerly initialize Supabase on page load
+    if (this.hasSupabase) {
+      this.initSupabase().catch(err => console.warn("[Storage] Failed to init Supabase:", err));
+    }
+    
     window.addEventListener("online", () => {
       this.isOnline = true;
+      console.log("[Storage] Online - syncing queue");
       this.syncQueue();
     });
     window.addEventListener("offline", () => {
       this.isOnline = false;
+      console.log("[Storage] Offline - queuing saves");
     });
   }
 
@@ -26,17 +35,29 @@ class StorageManager {
    * Initialize Supabase connection for cloud storage
    */
   async initSupabase() {
-    if (!this.hasSupabase) return false;
-    if (this.db) return true;
-    if (this.initPromise) return this.initPromise;
+    if (!this.hasSupabase) {
+      console.log("[Storage] Supabase not configured");
+      return false;
+    }
+    if (this.db) {
+      console.log("[Storage] Supabase already initialized");
+      return true;
+    }
+    if (this.initPromise) {
+      console.log("[Storage] Supabase initialization in progress...");
+      return this.initPromise;
+    }
     
+    console.log("[Storage] Starting Supabase initialization...");
     this.initPromise = (async () => {
       try {
         const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
         this.db = createClient(SUPABASE_URL, SUPABASE_KEY);
+        console.log("[Storage] Supabase initialized successfully");
         return true;
       } catch (error) {
-        console.warn("Supabase initialization failed:", error);
+        console.warn("[Storage] Supabase initialization failed:", error);
+        this.db = null;
         return false;
       }
     })();
@@ -55,13 +76,16 @@ class StorageManager {
     
     // Always save to localStorage (fallback)
     localStorage.setItem(`unlockly:locker:${upperCode}`, JSON.stringify(config));
+    console.log("[Storage] Saved to localStorage:", upperCode);
 
     // Try to sync to cloud if available
     if (this.hasSupabase && this.isOnline) {
       try {
-        return await this.syncToCloud(upperCode, config);
+        const result = await this.syncToCloud(upperCode, config);
+        console.log("[Storage] Cloud sync successful:", upperCode);
+        return result;
       } catch (error) {
-        console.warn("Cloud sync failed, queued for retry:", error);
+        console.warn("[Storage] Cloud sync failed, queued for retry:", error);
         this.queueForSync(upperCode, config);
       }
     }
@@ -76,20 +100,30 @@ class StorageManager {
    */
   async load(code) {
     const upperCode = code.toUpperCase();
+    console.log("[Storage] Loading:", upperCode);
 
     // Try cloud first if available
     if (this.hasSupabase && this.isOnline) {
       try {
         const cloudData = await this.loadFromCloud(upperCode);
-        if (cloudData) return cloudData;
+        if (cloudData) {
+          console.log("[Storage] Loaded from cloud:", upperCode);
+          return cloudData;
+        }
       } catch (error) {
-        console.debug("Cloud load failed, falling back to localStorage:", error);
+        console.debug("[Storage] Cloud load failed, falling back to localStorage:", error);
       }
     }
 
     // Fall back to localStorage
     const local = localStorage.getItem(`unlockly:locker:${upperCode}`);
-    return local ? JSON.parse(local) : null;
+    if (local) {
+      console.log("[Storage] Loaded from localStorage:", upperCode);
+      return JSON.parse(local);
+    }
+    
+    console.log("[Storage] Not found:", upperCode);
+    return null;
   }
 
   /**
@@ -97,12 +131,17 @@ class StorageManager {
    */
   async syncToCloud(code, config) {
     if (!this.db) {
-      await this.initSupabase();
+      const initialized = await this.initSupabase();
+      if (!initialized) return false;
     }
 
-    if (!this.db) return false;
+    if (!this.db) {
+      console.error("[Storage] Supabase client not available");
+      return false;
+    }
 
     try {
+      console.log("[Storage] Syncing to cloud:", code);
       const { data, error } = await this.db
         .from("unlocks")
         .upsert(
@@ -114,10 +153,14 @@ class StorageManager {
           { onConflict: "code" }
         );
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Storage] Supabase error:", error);
+        throw error;
+      }
+      console.log("[Storage] Cloud sync complete:", code);
       return true;
     } catch (error) {
-      console.error("Cloud sync failed:", error);
+      console.error("[Storage] Cloud sync failed:", error);
       throw error;
     }
   }
@@ -127,22 +170,40 @@ class StorageManager {
    */
   async loadFromCloud(code) {
     if (!this.db) {
-      await this.initSupabase();
+      const initialized = await this.initSupabase();
+      if (!initialized) {
+        console.log("[Storage] Supabase not initialized, skipping cloud load");
+        return null;
+      }
     }
 
-    if (!this.db) return null;
+    if (!this.db) {
+      console.error("[Storage] Supabase client not available");
+      return null;
+    }
 
     try {
+      console.log("[Storage] Loading from cloud:", code);
       const { data, error } = await this.db
         .from("unlocks")
         .select("config")
         .eq("code", code)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
-      return data?.config || null;
+      if (error && error.code !== "PGRST116") {
+        console.error("[Storage] Supabase query error:", error);
+        throw error;
+      }
+      
+      if (data?.config) {
+        console.log("[Storage] Cloud data found:", code);
+        return data.config;
+      }
+      
+      console.log("[Storage] Cloud data not found:", code);
+      return null;
     } catch (error) {
-      console.debug("Cloud load failed:", error);
+      console.debug("[Storage] Cloud load failed:", error);
       return null;
     }
   }
@@ -156,9 +217,10 @@ class StorageManager {
       if (!queue.find(item => item.code === code)) {
         queue.push({ code, config, timestamp: Date.now() });
         localStorage.setItem("unlockly:syncQueue", JSON.stringify(queue));
+        console.log("[Storage] Queued for sync:", code);
       }
     } catch (error) {
-      console.error("Failed to queue sync:", error);
+      console.error("[Storage] Failed to queue sync:", error);
     }
   }
 
@@ -170,19 +232,21 @@ class StorageManager {
 
     try {
       const queue = JSON.parse(localStorage.getItem("unlockly:syncQueue") || "[]");
+      console.log("[Storage] Processing sync queue, items:", queue.length);
       
       for (const item of queue) {
         try {
           await this.syncToCloud(item.code, item.config);
         } catch (error) {
-          console.warn(`Failed to sync ${item.code}:`, error);
+          console.warn(`[Storage] Failed to sync ${item.code}:`, error);
           break; // Stop on first error to maintain queue order
         }
       }
 
       localStorage.removeItem("unlockly:syncQueue");
+      console.log("[Storage] Sync queue processed");
     } catch (error) {
-      console.error("Queue sync failed:", error);
+      console.error("[Storage] Queue sync failed:", error);
     }
   }
 
