@@ -51,8 +51,12 @@ class StorageManager {
     console.log("[Storage] Starting Supabase initialization...");
     this.initPromise = (async () => {
       try {
-        const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-        this.db = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm");
+        const createSupabaseClient = supabase.createClient || supabase.default?.createClient;
+        if (!createSupabaseClient) {
+          throw new Error("Supabase createClient export was not found");
+        }
+        this.db = createSupabaseClient(SUPABASE_URL, SUPABASE_KEY);
         console.log("[Storage] Supabase initialized successfully");
         return true;
       } catch (error) {
@@ -82,8 +86,11 @@ class StorageManager {
     if (this.hasSupabase && this.isOnline) {
       try {
         const result = await this.syncToCloud(upperCode, config);
-        console.log("[Storage] Cloud sync successful:", upperCode);
-        return result;
+        if (result) {
+          console.log("[Storage] Cloud sync successful:", upperCode);
+          return true;
+        }
+        throw new Error("Cloud sync returned false");
       } catch (error) {
         console.warn("[Storage] Cloud sync failed, queued for retry:", error);
         this.queueForSync(upperCode, config);
